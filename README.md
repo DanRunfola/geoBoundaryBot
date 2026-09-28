@@ -2,6 +2,17 @@
 
 Confirming geoBoundaries submissions are in the proper format. And destroying all humans on the weekend.
 
+## Container image for this fork
+
+This fork publishes `ghcr.io/danrunfola/geoboundarybot` from `main` using the
+**Build container** GitHub Actions workflow. Each successful build runs the
+build-lock timestamp regression tests before publishing the `latest`, `main`,
+and short commit SHA tags. The workflow can also be started manually.
+
+The chart defaults and `vcluster-values.yaml` use this image. The vcluster
+overrides select `nfs-csi` for both volumes and keep both build schedules
+paused until a manual build has been validated.
+
 ## Deploying with Helm
 
 The Helm chart lives in `charts/geoboundarybot/`. It deploys:

@@ -1,5 +1,5 @@
 image:
-  repository: ghcr.io/wmgeolab/geoboundarybot
+  repository: ghcr.io/danrunfola/geoboundarybot
   tag: latest
   pullPolicy: Always
 
@@ -64,7 +64,7 @@ volume:
 dask:
   scheduler:
     image:
-      repository: ghcr.io/wmgeolab/geoboundarybot
+      repository: ghcr.io/danrunfola/geoboundarybot
       tag: latest
     serviceType: ClusterIP
     env:
@@ -74,7 +74,7 @@ dask:
   worker:
     replicas: 0 # run.py scales workers up/down during builds
     image:
-      repository: ghcr.io/wmgeolab/geoboundarybot
+      repository: ghcr.io/danrunfola/geoboundarybot
       tag: latest
     env:
       - name: PYTHONPATH

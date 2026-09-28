@@ -1,38 +1,52 @@
 name: Build container
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
 
-env:
-  IMAGE_NAME: ${{ github.event.repository.name }}
-  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
-  REGISTRY_USER: ${{ github.actor }}
-  REGISTRY_PASSWORD: ${{ github.token }}
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   build:
     name: Build Image
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get Short Commit SHA
+      - name: Prepare image metadata
         id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
-      - name: Check outputs
-        run: echo ${{ steps.vars.outputs.sha_short }}
+        shell: bash
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "image_name=${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"
+          echo "registry=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
 
       - name: Buildah Action
         id: build_image
         uses: redhat-actions/buildah-build@v2
         with:
-          image: ${{ env.IMAGE_NAME }}
+          image: ${{ steps.vars.outputs.image_name }}
           tags: latest ${{ steps.vars.outputs.sha_short }} ${{ github.ref_name }}
           containerfiles: |
             ./Containerfile
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Test build-lock timestamps in the image
+        env:
+          BUILT_IMAGE: ${{ steps.build_image.outputs.image-with-tag }}
+        run: |
+          podman run --rm --pull=never \
+            -v "$GITHUB_WORKSPACE/tests:/tests:ro" \
+            "$BUILT_IMAGE" \
+            python -m unittest discover -s /tests -p test_build_lock.py -v
 
       - name: Push Image
         id: push
@@ -40,9 +54,9 @@ jobs:
         with:
           image: ${{ steps.build_image.outputs.image }}
           tags: ${{ steps.build_image.outputs.tags }}
-          registry: ${{ env.IMAGE_REGISTRY }}
-          username: ${{ env.REGISTRY_USER }}
-          password: ${{ env.REGISTRY_PASSWORD }}
+          registry: ${{ steps.vars.outputs.registry }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
 
       - name: Echo outputs
         run: |

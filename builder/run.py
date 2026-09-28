@@ -71,7 +71,9 @@ def _utcnow():
 
 
 def _k8s_time(dt):
-    return dt.isoformat().replace("+00:00", "Z")
+    # Lease timestamps use Kubernetes MicroTime, which requires six digits
+    # even when _utcnow() returns a whole second.
+    return dt.isoformat(timespec="microseconds").replace("+00:00", "Z")
 
 
 def _status_code(exc):

@@ -1,0 +1,25 @@
+# Deployment overrides for the geolab vcluster.
+# Use release name geoboundaries to match the Dask worker's data PVC.
+image:
+  repository: ghcr.io/danrunfola/geoboundarybot
+
+volume:
+  storageClass: nfs-csi
+
+builddb:
+  storageClass: nfs-csi
+
+# Enable scheduled builds only after validating a manual build.
+build:
+  nightly:
+    suspend: true
+  release:
+    suspend: true
+
+dask:
+  scheduler:
+    image:
+      repository: ghcr.io/danrunfola/geoboundarybot
+  worker:
+    image:
+      repository: ghcr.io/danrunfola/geoboundarybot
